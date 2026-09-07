@@ -1,8 +1,8 @@
 import socket
 
 BUFF_SIZE = 32
-LINE_BRAKE = '\r\n'
-SEPARATOR = '\r\n'
+LINE_BREAK = '\r\n'
+HEAD_SEPARATOR = '\r\n\r\n'
 HEADER_SEPARATOR = ':'
 
 
@@ -22,12 +22,12 @@ Toma un mensaje http bien estructurado en bytes y retorna su verision en la clas
 def parse_HTTP_message(http_message: bytes) -> HTTP_message:
     deco_message = http_message.decode()
 
-    body = strip(deco_message.split(SEPARATOR)[1])
+    body = (deco_message.split(HEAD_SEPARATOR)[1]).strip()
     start = ""
     head = {}
 
-    raw_head = deco_message.split(SEPARATOR)[0]
-    for index, header_raw in enumerate(raw_head.split(LINE_BRAKE)):
+    raw_head = deco_message.split(HEAD_SEPARATOR)[0]
+    for index, header_raw in enumerate(raw_head.split(LINE_BREAK)):
         if index == 0:
             start = header_raw
             continue
@@ -41,54 +41,61 @@ def parse_HTTP_message(http_message: bytes) -> HTTP_message:
 Toma un mensaje correctamente formado por nuestra estructura y retorna este mensaje formateado como bytes.
 '''
 def create_HTTP_message(http_message: HTTP_message) -> bytes:
-    final_message = f'{http_message.start}{SEPARATOR}'
+    final_message = f'{http_message.start}{LINE_BREAK}'
 
     for key, value in http_message.head.item():
-        final_message += f'{key}: {value}{SEPARATOR}'
+        final_message += f'{key}{HEADER_SEPARATOR} {value}{LINE_BREAK}'
     
-    final_message += f'{SEPARATOR}{http_message.body}'
+    final_message += f'{LINE_BREAK}{http_message.body}'
 
     return final_message.encode
 
+'''contains_end_of_head: string -> bool
+Devuelve si la cadena contiene el final del head
+'''
+def contains_end_of_head(message: str) -> bool:
+    return message.endswith(HEAD_SEPARATOR)
 
+''' get_body_count: bytes -> int
+Devuelve la cantidad de bytes recibidos en el body
+'''
+def get_body_count(message: bytes) -> int:
+    index = message.rfind(HEAD_SEPARATOR)
+    return len(message) - (index + 1)
 
+'''get_body_length: str -> int
+Toma el head de un http y entrega el largo del body
+'''
+def get_body_length(head: str) -> int:
+    head_lower = head.lower()
+    
+    if 'content-length:' not in head_lower:
+        return 0
+        
+    return int((head_lower.split('content-length:')[1].split(LINE_BREAK)[0]).strip())
 
-
-
-
-
-
-def receive_full_message(connection_socket):
+''' receive_full_http_message: Socket -> bytes
+Toma un socket y retorna el mensaje completo.
+'''
+def receive_full_http_message(connection_socket):
 
     recv_message = connection_socket.recv(BUFF_SIZE)
     full_message = recv_message
 
-    is_end_of_message = contains_end_of_message(full_message.decode())
-
-    while not is_end_of_message:
+    while not contains_end_of_head(full_message.decode()):
         recv_message = connection_socket.recv(BUFF_SIZE)
-
         full_message += recv_message
 
-        is_end_of_message = contains_end_of_message(full_message.decode())
+    body_length = get_body_length(full_message)
 
-    full_message = remove_end_of_message(full_message.decode())
-
-    return full_message
-
-''' contains_end_of_message: String -> Bool
-Retorna true si la primera string contiene el caracter de cierre o no.
-'''
-def contains_end_of_message(message: str):
-    return message.endswith(END_SEQ)
-
-''' remove_end_of_message: String -> String
-Retorna una subcadena de la primera excluyendo todo lo que viene luego del caracter de cierre especificado.
-'''
-def remove_end_of_message(full_message):
-    index = full_message.rfind(END_SEQ)
-    return full_message[:index]
-
+    while body_length < get_body_count(full_message):
+        recv_message = connection_socket.recv(BUFF_SIZE)
+        full_message += recv_message
+    
+    if body_length == get_body_count(full_message):
+        return full_message
+    else:
+        return full_message[:get_body_count(full_message)-body_length]
 
 
 # Bucle principal
