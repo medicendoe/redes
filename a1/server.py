@@ -1,9 +1,11 @@
 import socket
 
-BUFF_SIZE = 32
+BUFF_SIZE = 8
 LINE_BREAK = '\r\n'
 HEAD_SEPARATOR = '\r\n\r\n'
 HEADER_SEPARATOR = ':'
+PROXY_NAME = 'localhost'
+PROXY_PORT = 8000
 
 
 ''' HTTP_message
@@ -33,7 +35,7 @@ def parse_HTTP_message(http_message: bytes) -> HTTP_message:
             continue
 
         header_split = header_raw.split(HEADER_SEPARATOR)
-        head[strip(header_split[0])] = strip(header_split[1])
+        head[header_split[0].strip()] = (''.join(header_split[1:])).strip()
 
     return HTTP_message(start, head, body)
 
@@ -43,25 +45,25 @@ Toma un mensaje correctamente formado por nuestra estructura y retorna este mens
 def create_HTTP_message(http_message: HTTP_message) -> bytes:
     final_message = f'{http_message.start}{LINE_BREAK}'
 
-    for key, value in http_message.head.item():
+    for key, value in http_message.head.items():
         final_message += f'{key}{HEADER_SEPARATOR} {value}{LINE_BREAK}'
     
     final_message += f'{LINE_BREAK}{http_message.body}'
 
-    return final_message.encode
+    return final_message.encode()
 
 '''contains_end_of_head: string -> bool
 Devuelve si la cadena contiene el final del head
 '''
 def contains_end_of_head(message: str) -> bool:
-    return message.endswith(HEAD_SEPARATOR)
+    return HEAD_SEPARATOR in message
 
 ''' get_body_count: bytes -> int
 Devuelve la cantidad de bytes recibidos en el body
 '''
 def get_body_count(message: bytes) -> int:
-    index = message.rfind(HEAD_SEPARATOR)
-    return len(message) - (index + 1)
+    index = (message.decode()).rfind(HEAD_SEPARATOR)
+    return len(message) - (index + 4)
 
 '''get_body_length: str -> int
 Toma el head de un http y entrega el largo del body
@@ -77,7 +79,7 @@ def get_body_length(head: str) -> int:
 ''' receive_full_http_message: Socket -> bytes
 Toma un socket y retorna el mensaje completo.
 '''
-def receive_full_http_message(connection_socket):
+def receive_full_http_message(connection_socket) -> bytes:
 
     recv_message = connection_socket.recv(BUFF_SIZE)
     full_message = recv_message
@@ -86,41 +88,57 @@ def receive_full_http_message(connection_socket):
         recv_message = connection_socket.recv(BUFF_SIZE)
         full_message += recv_message
 
-    body_length = get_body_length(full_message)
+    body_length = get_body_length(full_message.decode())
 
-    while body_length < get_body_count(full_message):
+    while body_length > get_body_count(full_message):
         recv_message = connection_socket.recv(BUFF_SIZE)
         full_message += recv_message
     
     if body_length == get_body_count(full_message):
         return full_message
     else:
-        return full_message[:get_body_count(full_message)-body_length]
+        return full_message[:-(get_body_count(full_message)-body_length)]
 
+'''proxy_request: socket socket HTTP_message -> void
+Hace el proxy de una request que viene desde un cliente hasta el source y devuelve la respuesta al cliente
+'''
+def proxy_request(source_socket, client_socket, request: HTTP_message):
+    host = request.head['Host']
+
+    if ':' in host:
+        split = host.split(':')
+        source_socket.connect((split[0], split[1]))
+    else:
+        source_socket.connect((host, 80))
+    
+    source_socket.sendall(create_HTTP_message(request))
+
+    http_response = parse_HTTP_message(receive_full_http_message(source_socket))
+
+    source_socket.close()
+
+    http_response.head['X-ElQuePregunta'] = f'{PROXY_NAME}:{PROXY_PORT}'
+
+    client_socket.sendall(create_HTTP_message(http_response))
 
 # Bucle principal
 if __name__ == "__main__":
-    end_of_message = "\n"
-    server_socket_address = ('localhost', 5000)
+    server_socket_address = (PROXY_NAME, PROXY_PORT)
 
-    print('Creando socket - Servidor')
+    print('Iniciando Proxy')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     server_socket.bind(server_socket_address)
 
     server_socket.listen(3)
 
-    print('... Esperando clientes')
+    print('... Esperando peticiones')
     while True:
         new_socket, new_socket_address = server_socket.accept()
 
-        recv_message = receive_full_message(new_socket, buff_size, end_of_message)
+        client_request = parse_HTTP_message(receive_full_http_message(new_socket))
 
-        print(f' -> Se ha recibido el siguiente mensaje: {recv_message}')
+        proxy_request(client_socket, new_socket, client_request)
 
-        response_message = f"Se ha sido recibido con éxito el mensaje: {recv_message}"
-
-        new_socket.send(response_message.encode())
-
-        new_socket.close()
-        print(f"conexión con {new_socket_address} ha sido cerrada")
+        print(f"Petición respondida")
