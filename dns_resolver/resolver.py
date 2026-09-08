@@ -46,7 +46,7 @@ def resolver(mensaje_consulta: bytes, ip_addr=ROOT_IP) -> bytes:
                 else:
                     nsf = ns_names[0]
                     
-                    query_para_ns = DNSRecord.question(nfs, "A").pack()
+                    query_para_ns = DNSRecord.question(nsf, "A").pack()
                     
                     nsr_bytes = resolver(query_para_ns)
                     
@@ -56,9 +56,9 @@ def resolver(mensaje_consulta: bytes, ip_addr=ROOT_IP) -> bytes:
                         if has_a_record(nsr_parsed):
                             if DEBUG:
                                 ip_ns = str([r.rdata for r in nsr_parsed.rr if r.rtype == QTYPE.A][0])
-                                print(f"(debug) Consultando '{query_name}' a '{nsf}' con dirección IP '{ip_descubierta_ns}'")
+                                print(f"(debug) Consultando '{query_name}' a '{nsf}' con dirección IP '{ip_ns}'")
 
-                            return resolver(mensaje_consulta, ip_descubierta_ns)
+                            return resolver(mensaje_consulta, ip_ns)
     finally:
         sock.close()
     
