@@ -1,0 +1,16 @@
+Había una vez un paquete que salió de su casa en el puerto 8000 con la ilusión de llegar entero al otro lado.
+No viajaba solo: lo acompañaban sus hermanos, todos de ocho bytes, numerados con cuidado para que nadie se
+confundiera en el camino. El primero llevaba una sola noticia, el largo total de la familia, porque el receptor
+odia esperar sin saber cuánto le queda.
+
+En la ruta algunos se perdieron. Nadie supo bien dónde; la red no da explicaciones. El emisor, paciente, contó
+hasta medio segundo y volvió a mandar a todos los que no habían confirmado su llegada. Así es Go-Back-N: un poco
+terco, bastante ordenado y nada rencoroso.
+
+Pero también aprendió algo. Cada vez que el silencio se alargaba, achicaba su ventana a un solo paquete y partía
+de nuevo, despacio, duplicando su confianza con cada ACK que volvía. Cuando llegaba a la mitad de donde se había
+caído antes, dejaba de duplicar y empezaba a crecer de a poco, como quien ya se quemó una vez con la sopa.
+
+Al final todos llegaron. Algunos dos o tres veces, es cierto, pero el receptor sólo se quedó con uno de cada uno
+y los puso en fila, en el orden correcto. Luego vino el FIN, un ACK de despedida repetido tres veces por si
+acaso, y el puerto quedó en silencio. La red, que es justa, ya estaba ocupada con la historia de otro.
