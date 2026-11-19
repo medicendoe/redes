@@ -1,0 +1,31 @@
+Había una vez un archivo que quería viajar desde R1 hasta R5 y no tenía idea de cómo era el camino.
+Como era muy grande para un solo paquete, lo cortaron en líneas y a cada una le pusieron su header.
+Siete bytes por cabeza: cuatro para la IP, dos para el puerto y uno para el TTL, que es como la paciencia.
+La primera línea salió muy confiada, con diez saltos de paciencia y la dirección de R5 bien anotada.
+R1 no sabía mucho del mundo, pero sabía una cosa: todo lo que no era para él había que mandarlo a R2.
+R2 era distinto. Tenía dos caminos hacia R5 y una manía: nunca usaba el mismo dos veces seguidas.
+A la primera línea la mandó por R3, a la segunda por R4, a la tercera de nuevo por R3, y así.
+R3 tenía la misma manía, y a veces devolvía las líneas a R2 como quien devuelve una carta mal dirigida.
+R2 no se ofendía. Las recibía, les restaba un salto de paciencia y las mandaba por el otro lado.
+Algunas líneas llegaron a R5 en tres saltos, derechito, como si conocieran el barrio.
+Otras dieron un par de vueltas por R2, R3 y R4 antes de encontrar la puerta, mirando el paisaje.
+Un par se quedaron sin paciencia rebotando entre R2 y R4, y un router les dijo que hasta ahí no más.
+Pero las vueltas cuestan tiempo, y en una red sin reloj el tiempo se nota en el orden.
+La línea cinco llegó antes que la cuatro, y la cuatro no se lo perdonó nunca.
+R5 no se preocupaba: imprimía lo que le llegaba, en el orden en que le llegaba, sin preguntar.
+Nadie le había dicho que las líneas tenían un orden, y nadie le había dado un número para verificarlo.
+Eso, pensó la última línea mientras esperaba en R4, es trabajo de la capa de transporte.
+Mientras tanto, en otra parte de la red, un paquete con la tabla de rutas mal escrita daba vueltas.
+Iba de R1 a R2 y de R2 a R1, una y otra vez, como un perro persiguiendo su propia cola.
+Sin TTL nadie lo habría detenido nunca; habría girado hasta que alguien apagara los routers.
+Con TTL la historia fue más corta: diez vueltas y un router que dijo basta, este paquete ya no sigue.
+Al costado de todo estaba el router default, en el puerto 7000, esperando lo que nadie más quería.
+Le llegaban paquetes con direcciones raras, a puertos que no existían, a redes de otros lados.
+Él tampoco sabía qué hacer con ellos, pero al menos los recibía con dignidad y avisaba que no había ruta.
+En las redes de verdad el default sabe salir a Internet, pero este era un mini-Internet y se conformaba.
+Al final del día R5 tenía casi todas las líneas, bastante desordenadas, y le faltaba alguna.
+El archivo, ya armado a medias, entendió que viajar en pedazos tiene sus riesgos y sus ventajas.
+Los riesgos: llegar en desorden, dar vueltas de más, gastar la paciencia en caminos largos.
+Las ventajas: si un camino se llena hay otro, y ningún router tiene que cargar con todo el viaje.
+Esa noche, en los logs, quedó escrito cada salto, cada vuelta y cada decisión de round-robin.
+Y quien los leyó al otro día entendió por fin por qué R2 nunca usaba el mismo camino dos veces seguidas.
